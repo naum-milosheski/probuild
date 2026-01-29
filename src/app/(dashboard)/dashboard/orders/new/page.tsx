@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import {
     Sparkles,
     ArrowRight,
@@ -52,6 +53,7 @@ const MOCK_PRODUCTS: Product[] = [
 ]
 
 export default function MagicImportPage() {
+    const router = useRouter()
     const [step, setStep] = useState<Step>('input')
     const [rawText, setRawText] = useState('')
     const [result, setResult] = useState<MagicImportResult | null>(null)
@@ -468,7 +470,10 @@ export default function MagicImportPage() {
                             <Sparkles className="w-4 h-4" />
                             New Import
                         </button>
-                        <button className="btn btn-primary">
+                        <button
+                            onClick={() => router.push('/dashboard/orders')}
+                            className="btn btn-primary"
+                        >
                             <Package className="w-4 h-4" />
                             View Order
                         </button>
