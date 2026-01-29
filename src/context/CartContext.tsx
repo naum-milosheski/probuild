@@ -1,7 +1,6 @@
 'use client'
 
 import { createContext, useContext, useState, ReactNode } from 'react'
-import type { Database } from '@/lib/supabase/types' // If available, or just use partial types
 
 // Define simple types since we are in a hurry, or use shared types
 export interface CartItem {
