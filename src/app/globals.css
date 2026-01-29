@@ -1,26 +1,541 @@
 @import "tailwindcss";
 
+/* ============================================
+   ProBuild Supply - Industrial SaaS Design System
+   Dark mode by default, high density, high contrast
+   ============================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  /* Core Background Layers */
+  --bg-primary: #0A0A0B;
+  --bg-secondary: #141415;
+  --bg-tertiary: #1C1C1E;
+  --bg-elevated: #242426;
+  --bg-hover: #2A2A2D;
+
+  /* Text Hierarchy */
+  --text-primary: #FAFAFA;
+  --text-secondary: #A1A1A6;
+  --text-tertiary: #6B6B70;
+  --text-muted: #4A4A4E;
+
+  /* Safety Orange - Primary Brand / Critical Actions */
+  --orange-300: #FFB380;
+  --orange-400: #FF8533;
+  --orange-500: #FF6B00;
+  --orange-600: #E55A00;
+  --orange-700: #CC4D00;
+
+  /* Status Colors */
+  --success-400: #4ADE80;
+  --success-500: #22C55E;
+  --success-600: #16A34A;
+
+  --warning-400: #FCD34D;
+  --warning-500: #FBBF24;
+  --warning-600: #D97706;
+
+  --error-400: #F87171;
+  --error-500: #EF4444;
+  --error-600: #DC2626;
+
+  --info-400: #60A5FA;
+  --info-500: #3B82F6;
+  --info-600: #2563EB;
+
+  /* Borders */
+  --border-subtle: #2A2A2D;
+  --border-default: #3A3A3D;
+  --border-strong: #4A4A4E;
+
+  /* Radius - Sharp, industrial */
+  --radius-sm: 4px;
+  --radius-md: 6px;
+  --radius-lg: 8px;
+
+  /* Shadows */
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.5);
+  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.6);
+  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.7);
+
+  /* Spacing */
+  --spacing-xs: 4px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
+  --spacing-xl: 32px;
+  --spacing-2xl: 48px;
+
+  /* Typography */
+  --font-sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', monospace;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-bg-primary: var(--bg-primary);
+  --color-bg-secondary: var(--bg-secondary);
+  --color-bg-tertiary: var(--bg-tertiary);
+  --color-bg-elevated: var(--bg-elevated);
+  --color-bg-hover: var(--bg-hover);
+
+  --color-text-primary: var(--text-primary);
+  --color-text-secondary: var(--text-secondary);
+  --color-text-tertiary: var(--text-tertiary);
+
+  --color-orange-300: var(--orange-300);
+  --color-orange-400: var(--orange-400);
+  --color-orange-500: var(--orange-500);
+  --color-orange-600: var(--orange-600);
+
+  --color-success: var(--success-500);
+  --color-warning: var(--warning-500);
+  --color-error: var(--error-500);
+  --color-info: var(--info-500);
+
+  --color-border-subtle: var(--border-subtle);
+  --color-border-default: var(--border-default);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+/* Base Styles */
+* {
+  box-sizing: border-box;
+}
+
+html {
+  color-scheme: dark;
+  overflow-y: scroll;
+  /* Prevent layout shift when scrollbar appears */
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Scrollbar - Industrial Style */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--bg-secondary);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--border-strong);
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--text-tertiary);
+}
+
+/* Focus States */
+*:focus-visible {
+  outline: 2px solid var(--orange-500);
+  outline-offset: 2px;
+}
+
+/* Selection */
+::selection {
+  background: var(--orange-500);
+  color: var(--bg-primary);
+}
+
+/* ============================================
+   Component Base Styles
+   ============================================ */
+
+/*Buttons, Inputs, Cards, Tables, Badges */
+@layer components {
+
+  /* Buttons */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 8px 16px;
+    font-size: 14px;
+    font-weight: 500;
+    border-radius: var(--radius-md);
+    border: none;
+    cursor: pointer;
+    transition: all 0.15s ease;
+    white-space: nowrap;
+  }
+
+  .btn-primary {
+    background: var(--orange-500);
+    color: var(--bg-primary);
+  }
+
+  .btn-primary:hover {
+    background: var(--orange-400);
+  }
+
+  .btn-primary:active {
+    background: var(--orange-600);
+  }
+
+  .btn-secondary {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+    border: 1px solid var(--border-default);
+  }
+
+  .btn-secondary:hover {
+    background: var(--bg-elevated);
+    border-color: var(--border-strong);
+  }
+
+  .btn-ghost {
+    background: transparent;
+    color: var(--text-secondary);
+  }
+
+  .btn-ghost:hover {
+    background: var(--bg-tertiary);
+    color: var(--text-primary);
+  }
+
+  /* Inputs */
+  .input {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-default);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    font-size: 14px;
+    color: var(--text-primary);
+    width: 100%;
+    transition: all 0.15s ease;
+  }
+
+  .input::placeholder {
+    color: var(--text-tertiary);
+  }
+
+  .input:focus {
+    outline: none;
+    border-color: var(--orange-500);
+    box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
+  }
+
+  .input:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+
+  /* Cards */
+  .card {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-md);
+  }
+
+  .card-elevated {
+    background: var(--bg-elevated);
+    box-shadow: var(--shadow-md);
+  }
+
+  /* Tables */
+  .table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  .table th {
+    text-align: left;
+    padding: 12px 16px;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-tertiary);
+    background: var(--bg-tertiary);
+    border-bottom: 1px solid var(--border-default);
+  }
+
+  .table td {
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border-subtle);
+    color: var(--text-primary);
+  }
+
+  .table tr:hover td {
+    background: var(--bg-tertiary);
+  }
+
+  /* Badges */
+  .badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    font-size: 12px;
+    font-weight: 500;
+    border-radius: var(--radius-sm);
+  }
+
+  .badge-success {
+    background: rgba(34, 197, 94, 0.15);
+    color: var(--success-400);
+  }
+
+  .badge-warning {
+    background: rgba(251, 191, 36, 0.15);
+    color: var(--warning-400);
+  }
+
+  .badge-error {
+    background: rgba(239, 68, 68, 0.15);
+    color: var(--error-400);
+  }
+
+  .badge-info {
+    background: rgba(59, 130, 246, 0.15);
+    color: var(--info-400);
+  }
+
+  .badge-orange {
+    background: rgba(255, 107, 0, 0.15);
+    color: var(--orange-400);
+  }
+}
+
+/* Text Utilities */
+.text-primary {
+  color: var(--text-primary);
+}
+
+.text-secondary {
+  color: var(--text-secondary);
+}
+
+.text-tertiary {
+  color: var(--text-tertiary);
+}
+
+.text-orange {
+  color: var(--orange-500);
+}
+
+.text-success {
+  color: var(--success-500);
+}
+
+.text-warning {
+  color: var(--warning-500);
+}
+
+.text-error {
+  color: var(--error-500);
+}
+
+/* Background Utilities */
+.bg-primary {
+  background: var(--bg-primary);
+}
+
+.bg-secondary {
+  background: var(--bg-secondary);
+}
+
+.bg-tertiary {
+  background: var(--bg-tertiary);
+}
+
+.bg-elevated {
+  background: var(--bg-elevated);
+}
+
+/* Border Utilities */
+.border-subtle {
+  border-color: var(--border-subtle);
+}
+
+.border-default {
+  border-color: var(--border-default);
+}
+
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse {
+
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.2s ease-out;
+}
+
+.animate-slide-up {
+  animation: slideUp 0.2s ease-out;
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ============================================
+   Print Styles - Professional Paper Invoice
+   ============================================ */
+@media print {
+
+  /* Reset colors for paper */
+  :root {
+    --bg-primary: #FFFFFF;
+    --bg-secondary: #FFFFFF;
+    --bg-tertiary: #F5F5F5;
+    --bg-elevated: #FFFFFF;
+    --text-primary: #000000;
+    --text-secondary: #333333;
+    --text-tertiary: #666666;
+    --border-subtle: #E5E5E5;
+    --border-default: #CCCCCC;
+  }
+
+  /* Force white background and black text */
+  body {
+    background: white !important;
+    color: black !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* Hide navigation sidebar */
+  aside,
+  nav,
+  .sidebar,
+  [data-sidebar],
+  .navigation {
+    display: none !important;
+  }
+
+  /* Hide action buttons */
+  button,
+  .btn {
+    display: none !important;
+  }
+
+  /* Show main content full width */
+  main {
+    margin: 0 !important;
+    padding: 20px !important;
+    max-width: 100% !important;
+    background: white !important;
+  }
+
+  /* Override card backgrounds */
+  .card {
+    background: white !important;
+    border: 1px solid #E5E5E5 !important;
+    box-shadow: none !important;
+    break-inside: avoid;
+  }
+
+  /* Table styling for print */
+  .table {
+    background: white !important;
+  }
+
+  .table th {
+    background: #F5F5F5 !important;
+    color: black !important;
+    border-bottom: 2px solid #333 !important;
+  }
+
+  .table td {
+    color: black !important;
+    border-bottom: 1px solid #E5E5E5 !important;
+  }
+
+  /* Text color overrides */
+  .text-text-primary,
+  .text-text-secondary,
+  .text-text-tertiary {
+    color: #333 !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: black !important;
+  }
+
+  /* Hide decorative elements */
+  .animate-fade-in,
+  .animate-slide-up {
+    animation: none !important;
+  }
+
+  /* Status badges - make them visible on print */
+  .status-badge,
+  [class*="bg-green"],
+  [class*="bg-yellow"],
+  [class*="bg-orange"],
+  [class*="bg-blue"] {
+    background: #F0F0F0 !important;
+    color: black !important;
+    border: 1px solid #999 !important;
+  }
+
+  /* Link styling for print */
+  a {
+    color: black !important;
+    text-decoration: none !important;
+  }
+
+  /* Page breaks */
+  .card {
+    page-break-inside: avoid;
+  }
+
+  /* Remove hover states */
+  *:hover {
+    background: inherit !important;
+  }
 }
