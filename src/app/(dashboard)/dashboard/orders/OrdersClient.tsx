@@ -12,6 +12,7 @@ import {
     ChevronDown
 } from 'lucide-react'
 import Link from 'next/link'
+import { getDemoOrders, type DemoOrder } from '@/lib/demo-orders'
 
 interface Order {
     id: string
@@ -22,6 +23,7 @@ interface Order {
     created_at: string
     client?: { company_name: string }
     job_site?: { name: string }
+    isDemo?: boolean
 }
 
 const statusConfig: Record<string, { label: string; class: string }> = {
@@ -55,6 +57,32 @@ export default function OrdersClient({ orders: initialOrders }: { orders: Order[
     const [statusFilter, setStatusFilter] = useState<string>('')
     const [showFilters, setShowFilters] = useState(false)
     const dropdownRef = useRef<HTMLDivElement>(null)
+    const [demoOrders, setDemoOrders] = useState<Order[]>([])
+
+    // Load demo orders from sessionStorage on mount
+    useEffect(() => {
+        const orders = getDemoOrders()
+        // Convert DemoOrder to Order format
+        const converted: Order[] = orders.map(o => ({
+            id: o.id,
+            order_number: o.order_number,
+            status: o.status,
+            total: o.total,
+            source: o.source,
+            created_at: o.created_at,
+            client: o.client,
+            job_site: o.job_site,
+            isDemo: true,
+        }))
+        setDemoOrders(converted)
+    }, [])
+
+    // Merge demo orders with Supabase orders (demo first, sorted by date)
+    const allOrders = useMemo(() => {
+        return [...demoOrders, ...initialOrders].sort(
+            (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        )
+    }, [demoOrders, initialOrders])
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -70,7 +98,7 @@ export default function OrdersClient({ orders: initialOrders }: { orders: Order[
 
     // Filter orders based on search and status
     const filteredOrders = useMemo(() => {
-        return initialOrders.filter(order => {
+        return allOrders.filter(order => {
             const searchLower = searchQuery.toLowerCase()
             const matchesSearch = searchQuery === '' ||
                 order.order_number.toLowerCase().includes(searchLower) ||
@@ -81,13 +109,13 @@ export default function OrdersClient({ orders: initialOrders }: { orders: Order[
 
             return matchesSearch && matchesStatus
         })
-    }, [initialOrders, searchQuery, statusFilter])
+    }, [allOrders, searchQuery, statusFilter])
 
     // Get unique statuses for filter dropdown
     const availableStatuses = useMemo(() => {
-        const statuses = new Set(initialOrders.map(o => o.status))
+        const statuses = new Set(allOrders.map(o => o.status))
         return Array.from(statuses)
-    }, [initialOrders])
+    }, [allOrders])
 
     // Handle row click - navigate to order detail
     const handleRowClick = (orderId: string) => {
@@ -185,7 +213,7 @@ export default function OrdersClient({ orders: initialOrders }: { orders: Order[
             {/* Active filters indicator */}
             {(searchQuery || statusFilter) && (
                 <div className="flex items-center gap-2 text-sm">
-                    <span className="text-text-tertiary">Showing {filteredOrders.length} of {initialOrders.length} orders</span>
+                    <span className="text-text-tertiary">Showing {filteredOrders.length} of {allOrders.length} orders</span>
                     <button
                         onClick={() => { setSearchQuery(''); setStatusFilter(''); }}
                         className="text-orange-500 hover:underline"
@@ -224,6 +252,11 @@ export default function OrdersClient({ orders: initialOrders }: { orders: Order[
                                                 {order.source === 'magic_import' && (
                                                     <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-orange-500/10 text-orange-500 rounded">
                                                         AI
+                                                    </span>
+                                                )}
+                                                {order.isDemo && (
+                                                    <span className="px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-wider bg-purple-500/10 text-purple-500 rounded">
+                                                        Demo
                                                     </span>
                                                 )}
                                             </div>

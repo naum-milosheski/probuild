@@ -1,46 +1,28 @@
-import { notFound } from 'next/navigation'
+'use client'
+
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import {
     ArrowLeft,
     Package,
-    MapPin,
-    Calendar,
     Building2,
-    Sparkles
+    Sparkles,
+    MapPin,
+    Calendar
 } from 'lucide-react'
-import { createClient } from '@supabase/supabase-js'
-import StatusUpdater from './StatusUpdater'
-import OrderActions from './OrderActions'
-import DemoOrderDetail from './DemoOrderDetail'
+import { getDemoOrderById, type DemoOrder } from '@/lib/demo-orders'
 
-const DEFAULT_ORG_ID = '00000000-0000-0000-0000-000000000001'
+interface DemoOrderDetailProps {
+    orderId: string
+}
 
-async function getOrderDetails(orderId: string) {
-    const supabase = createClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL!,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
-    )
-
-    const { data: order, error } = await supabase
-        .from('orders')
-        .select(`
-      *,
-      client:clients(*),
-      job_site:job_sites(*),
-      items:order_items(
-        *,
-        product:products(*)
-      )
-    `)
-        .eq('id', orderId)
-        .eq('organization_id', DEFAULT_ORG_ID)
-        .single()
-
-    if (error || !order) {
-        return null
-    }
-
-    return order
+const statusConfig: Record<string, { label: string; class: string }> = {
+    pending: { label: 'Pending', class: 'badge-warning' },
+    confirmed: { label: 'Confirmed', class: 'badge-info' },
+    in_progress: { label: 'In Progress', class: 'badge-orange' },
+    ready: { label: 'Ready', class: 'badge-success' },
+    delivered: { label: 'Delivered', class: 'badge-success' },
 }
 
 function formatDate(dateString: string) {
@@ -54,18 +36,32 @@ function formatDate(dateString: string) {
     })
 }
 
-export default async function OrderDetailPage({ params }: { params: Promise<{ id: string }> }) {
-    const { id } = await params
+export default function DemoOrderDetail({ orderId }: DemoOrderDetailProps) {
+    const router = useRouter()
+    const [order, setOrder] = useState<DemoOrder | null>(null)
+    const [loading, setLoading] = useState(true)
 
-    // Check if this is a demo order (stored in sessionStorage)
-    if (id.startsWith('demo-')) {
-        return <DemoOrderDetail orderId={id} />
+    useEffect(() => {
+        const demoOrder = getDemoOrderById(orderId)
+        if (!demoOrder) {
+            // Demo order not found, redirect to orders list
+            router.push('/dashboard/orders')
+            return
+        }
+        setOrder(demoOrder)
+        setLoading(false)
+    }, [orderId, router])
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center py-20">
+                <div className="animate-spin w-8 h-8 border-2 border-orange-500 border-t-transparent rounded-full" />
+            </div>
+        )
     }
 
-    const order = await getOrderDetails(id)
-
     if (!order) {
-        notFound()
+        return null
     }
 
     return (
@@ -84,20 +80,27 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                             <h1 className="text-2xl font-semibold text-text-primary font-mono break-all leading-tight">
                                 {order.order_number}
                             </h1>
-                            {order.source === 'magic_import' && (
-                                <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-orange-500/10 text-orange-500 rounded flex-shrink-0">
-                                    <Sparkles className="w-3 h-3" />
-                                    AI Import
-                                </span>
-                            )}
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-orange-500/10 text-orange-500 rounded flex-shrink-0">
+                                <Sparkles className="w-3 h-3" />
+                                AI Import
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold uppercase tracking-wider bg-purple-500/10 text-purple-500 rounded flex-shrink-0">
+                                Demo
+                            </span>
                         </div>
                         <p className="text-text-secondary mt-1">
                             Created {formatDate(order.created_at)}
                         </p>
                     </div>
                 </div>
+            </div>
 
-                <OrderActions orderNumber={order.order_number} />
+            {/* Demo Notice */}
+            <div className="bg-purple-500/10 border border-purple-500/20 rounded-lg p-4">
+                <p className="text-purple-300 text-sm">
+                    <strong>Demo Order:</strong> This order was created in your browser session and is not saved to the database.
+                    It will disappear when you close this browser tab.
+                </p>
             </div>
 
             {/* Main content grid */}
@@ -109,11 +112,10 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                         <div className="flex flex-col items-start gap-4 lg:flex-row lg:items-center lg:justify-between">
                             <div>
                                 <h2 className="text-sm text-text-tertiary uppercase tracking-wide">Order Status</h2>
-                                <p className="text-text-secondary text-sm mt-1">
-                                    Click to update status as you process this order
-                                </p>
                             </div>
-                            <StatusUpdater orderId={order.id} currentStatus={order.status} />
+                            <span className={`badge ${statusConfig[order.status]?.class || 'badge-info'}`}>
+                                {statusConfig[order.status]?.label || order.status}
+                            </span>
                         </div>
                     </div>
 
@@ -134,12 +136,12 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                             <th className="text-right">Qty</th>
                                             <th className="text-right">Unit Price</th>
                                             <th className="text-right">Total</th>
-                                            {order.source === 'magic_import' && <th className="text-right">AI Conf.</th>}
+                                            <th className="text-right">AI Conf.</th>
                                         </tr>
                                     </thead>
                                     <tbody>
-                                        {order.items.map((item: any) => (
-                                            <tr key={item.id}>
+                                        {order.items.map((item, index) => (
+                                            <tr key={index}>
                                                 <td>
                                                     <div className="flex items-center gap-3">
                                                         <div className="p-2 bg-bg-tertiary rounded-md">
@@ -161,20 +163,18 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                                                 <td className="text-right font-medium">
                                                     ${item.line_total?.toFixed(2)}
                                                 </td>
-                                                {order.source === 'magic_import' && (
-                                                    <td className="text-right">
-                                                        {item.ai_confidence ? (
-                                                            <span className={`text-sm ${item.ai_confidence >= 0.9 ? 'text-green-400' :
-                                                                item.ai_confidence >= 0.7 ? 'text-yellow-400' :
-                                                                    'text-orange-400'
-                                                                }`}>
-                                                                {Math.round(item.ai_confidence * 100)}%
-                                                            </span>
-                                                        ) : (
-                                                            <span className="text-text-tertiary">-</span>
-                                                        )}
-                                                    </td>
-                                                )}
+                                                <td className="text-right">
+                                                    {item.ai_confidence ? (
+                                                        <span className={`text-sm ${item.ai_confidence >= 0.9 ? 'text-green-400' :
+                                                            item.ai_confidence >= 0.7 ? 'text-yellow-400' :
+                                                                'text-orange-400'
+                                                            }`}>
+                                                            {Math.round(item.ai_confidence * 100)}%
+                                                        </span>
+                                                    ) : (
+                                                        <span className="text-text-tertiary">-</span>
+                                                    )}
+                                                </td>
                                             </tr>
                                         ))}
                                     </tbody>
@@ -222,75 +222,30 @@ export default async function OrderDetailPage({ params }: { params: Promise<{ id
                     <div className="card">
                         <h2 className="text-sm text-text-tertiary uppercase tracking-wide mb-3">Client</h2>
                         {order.client ? (
-                            <div className="space-y-3">
-                                <div className="flex items-center gap-3">
-                                    <div className="p-2 bg-bg-tertiary rounded-lg">
-                                        <Building2 className="w-5 h-5 text-text-secondary" />
-                                    </div>
-                                    <div>
-                                        <p className="font-medium text-text-primary">{order.client.company_name}</p>
-                                        <p className="text-sm text-text-secondary">{order.client.contact_name}</p>
-                                    </div>
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-bg-tertiary rounded-lg">
+                                    <Building2 className="w-5 h-5 text-text-secondary" />
                                 </div>
-                                {order.client.email && (
-                                    <p className="text-sm text-text-secondary">{order.client.email}</p>
-                                )}
-                                {order.client.phone && (
-                                    <p className="text-sm text-text-secondary">{order.client.phone}</p>
-                                )}
+                                <div>
+                                    <p className="font-medium text-text-primary">{order.client.company_name}</p>
+                                </div>
                             </div>
                         ) : (
                             <p className="text-text-tertiary">No client assigned</p>
                         )}
                     </div>
 
-                    {/* Delivery Info */}
-                    <div className="card">
-                        <h2 className="text-sm text-text-tertiary uppercase tracking-wide mb-3">Delivery</h2>
-                        {order.job_site ? (
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 bg-bg-tertiary rounded-lg">
-                                    <MapPin className="w-5 h-5 text-text-secondary" />
-                                </div>
-                                <div>
-                                    <p className="font-medium text-text-primary">{order.job_site.name}</p>
-                                    <p className="text-sm text-text-secondary mt-1">
-                                        {order.job_site.address}
-                                        {order.job_site.city && `, ${order.job_site.city}`}
-                                        {order.job_site.state && `, ${order.job_site.state}`}
-                                        {order.job_site.zip && ` ${order.job_site.zip}`}
-                                    </p>
-                                </div>
-                            </div>
-                        ) : (
-                            <p className="text-text-tertiary">No delivery location set</p>
-                        )}
-                    </div>
-
                     {/* Timeline */}
                     <div className="card">
                         <h2 className="text-sm text-text-tertiary uppercase tracking-wide mb-3">Timeline</h2>
-                        <div className="space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="p-1.5 bg-bg-tertiary rounded">
-                                    <Calendar className="w-4 h-4 text-text-tertiary" />
-                                </div>
-                                <div className="text-sm">
-                                    <p className="text-text-secondary">Created</p>
-                                    <p className="text-text-tertiary">{formatDate(order.created_at)}</p>
-                                </div>
+                        <div className="flex items-center gap-3">
+                            <div className="p-1.5 bg-bg-tertiary rounded">
+                                <Calendar className="w-4 h-4 text-text-tertiary" />
                             </div>
-                            {order.updated_at !== order.created_at && (
-                                <div className="flex items-center gap-3">
-                                    <div className="p-1.5 bg-bg-tertiary rounded">
-                                        <Calendar className="w-4 h-4 text-text-tertiary" />
-                                    </div>
-                                    <div className="text-sm">
-                                        <p className="text-text-secondary">Last Updated</p>
-                                        <p className="text-text-tertiary">{formatDate(order.updated_at)}</p>
-                                    </div>
-                                </div>
-                            )}
+                            <div className="text-sm">
+                                <p className="text-text-secondary">Created</p>
+                                <p className="text-text-tertiary">{formatDate(order.created_at)}</p>
+                            </div>
                         </div>
                     </div>
                 </div>

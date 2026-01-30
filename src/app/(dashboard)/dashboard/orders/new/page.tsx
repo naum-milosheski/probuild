@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
     Sparkles,
@@ -14,9 +14,11 @@ import {
     FileText,
     ChevronDown,
     Edit2,
-    Trash2
+    Trash2,
+    Users
 } from 'lucide-react'
 import type { MagicImportResult, MatchedItem, UnmatchedItem, Product } from '@/types'
+import { addDemoOrder } from '@/lib/demo-orders'
 
 type Step = 'input' | 'processing' | 'review' | 'confirm'
 
@@ -52,6 +54,13 @@ const MOCK_PRODUCTS: Product[] = [
     },
 ]
 
+// Mock clients (matching seed data)
+const MOCK_CLIENTS = [
+    { id: '00000000-0000-0000-0002-000000000001', company_name: 'BuildRight Construction' },
+    { id: '00000000-0000-0000-0002-000000000002', company_name: 'City Plumbers Inc' },
+    { id: '00000000-0000-0000-0002-000000000003', company_name: 'Comfort Zone HVAC' },
+]
+
 export default function MagicImportPage() {
     const router = useRouter()
     const [step, setStep] = useState<Step>('input')
@@ -60,6 +69,21 @@ export default function MagicImportPage() {
     const [editedItems, setEditedItems] = useState<MatchedItem[]>([])
     const [resolvedItems, setResolvedItems] = useState<MatchedItem[]>([])
     const [error, setError] = useState<string | null>(null)
+    const [selectedClient, setSelectedClient] = useState<typeof MOCK_CLIENTS[0] | null>(null)
+    const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
+    const [showClientDropdown, setShowClientDropdown] = useState(false)
+    const clientDropdownRef = useRef<HTMLDivElement>(null)
+
+    // Close client dropdown when clicking outside
+    useEffect(() => {
+        function handleClickOutside(event: MouseEvent) {
+            if (clientDropdownRef.current && !clientDropdownRef.current.contains(event.target as Node)) {
+                setShowClientDropdown(false)
+            }
+        }
+        document.addEventListener('mousedown', handleClickOutside)
+        return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
 
     const exampleTexts = [
         "Send 30ft of half-inch copper pipe and 2 boxes of those red wire nuts to the Job Site A.",
@@ -124,8 +148,18 @@ export default function MagicImportPage() {
     }
 
     const handleConfirmOrder = () => {
+        if (!selectedClient) return
+
+        // Create demo order and save to sessionStorage
+        const order = addDemoOrder({
+            client: selectedClient,
+            items: allItems,
+            deliveryLocation: result?.delivery_location || null,
+            notes: result?.notes || null,
+        })
+
+        setCreatedOrderId(order.id)
         setStep('confirm')
-        // In production, this would create the order in Supabase
     }
 
     const allItems = [...editedItems, ...resolvedItems]
@@ -251,6 +285,62 @@ export default function MagicImportPage() {
                                 <span className="text-text-secondary">Delivery:</span>
                                 <span className="text-text-primary">{result.delivery_location}</span>
                             </div>
+                        )}
+                    </div>
+
+                    {/* Client Selection */}
+                    <div className="card">
+                        <div className="flex items-center gap-2 text-text-secondary text-sm mb-3">
+                            <Users className="w-4 h-4" />
+                            Select Client
+                        </div>
+                        <div className="relative" ref={clientDropdownRef}>
+                            <button
+                                onClick={() => setShowClientDropdown(!showClientDropdown)}
+                                className={`w-full flex items-center justify-between px-4 py-3 rounded-lg border transition-colors ${selectedClient
+                                        ? 'bg-bg-tertiary border-orange-500/50 text-text-primary'
+                                        : 'bg-bg-secondary border-border-default text-text-secondary hover:border-border-hover'
+                                    }`}
+                            >
+                                <span className={selectedClient ? 'font-medium' : ''}>
+                                    {selectedClient?.company_name || 'Choose a client...'}
+                                </span>
+                                <ChevronDown className={`w-4 h-4 transition-transform ${showClientDropdown ? 'rotate-180' : ''}`} />
+                            </button>
+
+                            {showClientDropdown && (
+                                <div className="absolute left-0 right-0 top-full mt-2 bg-bg-secondary border border-border-default rounded-lg shadow-xl z-20 overflow-hidden">
+                                    <div className="p-2 border-b border-border-subtle">
+                                        <span className="text-xs text-text-tertiary uppercase tracking-wide">Available Clients</span>
+                                    </div>
+                                    <div className="p-1 max-h-48 overflow-y-auto">
+                                        {MOCK_CLIENTS.map(client => (
+                                            <button
+                                                key={client.id}
+                                                onClick={() => {
+                                                    setSelectedClient(client)
+                                                    setShowClientDropdown(false)
+                                                }}
+                                                className={`w-full text-left px-3 py-2.5 rounded text-sm flex items-center gap-3 transition-colors ${selectedClient?.id === client.id
+                                                        ? 'bg-orange-500/10 text-orange-500'
+                                                        : 'text-text-secondary hover:bg-bg-tertiary hover:text-text-primary'
+                                                    }`}
+                                            >
+                                                <Users className="w-4 h-4" />
+                                                {client.company_name}
+                                                {selectedClient?.id === client.id && (
+                                                    <Check className="w-4 h-4 ml-auto" />
+                                                )}
+                                            </button>
+                                        ))}
+                                    </div>
+                                </div>
+                            )}
+                        </div>
+                        {!selectedClient && (
+                            <p className="text-xs text-text-tertiary mt-2">
+                                Please select a client to continue
+                            </p>
                         )}
                     </div>
 
@@ -426,12 +516,14 @@ export default function MagicImportPage() {
                                 </button>
                                 <button
                                     onClick={handleConfirmOrder}
-                                    disabled={unresolvedCount > 0}
+                                    disabled={unresolvedCount > 0 || !selectedClient}
                                     className="btn btn-primary disabled:opacity-50 w-full sm:w-auto justify-center"
                                 >
                                     {unresolvedCount > 0
                                         ? `Resolve ${unresolvedCount} item${unresolvedCount > 1 ? 's' : ''} first`
-                                        : 'Create Order'
+                                        : !selectedClient
+                                            ? 'Select a client first'
+                                            : 'Create Order'
                                     }
                                     <ArrowRight className="w-4 h-4" />
                                 </button>
@@ -464,6 +556,8 @@ export default function MagicImportPage() {
                                 setResult(null)
                                 setEditedItems([])
                                 setResolvedItems([])
+                                setSelectedClient(null)
+                                setCreatedOrderId(null)
                             }}
                             className="btn btn-secondary"
                         >
@@ -471,7 +565,7 @@ export default function MagicImportPage() {
                             New Import
                         </button>
                         <button
-                            onClick={() => router.push('/dashboard/orders')}
+                            onClick={() => router.push(createdOrderId ? `/dashboard/orders/${createdOrderId}` : '/dashboard/orders')}
                             className="btn btn-primary"
                         >
                             <Package className="w-4 h-4" />
