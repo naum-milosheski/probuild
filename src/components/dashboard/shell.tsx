@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { Sidebar, Header } from './navigation'
 
 export function DashboardShell({
@@ -9,6 +9,19 @@ export function DashboardShell({
     children: React.ReactNode
 }) {
     const [sidebarOpen, setSidebarOpen] = useState(false)
+
+    // Prevent body scrolling when sidebar is open on mobile
+    useEffect(() => {
+        if (sidebarOpen) {
+            document.body.style.overflow = 'hidden'
+        } else {
+            document.body.style.overflow = ''
+        }
+        // Cleanup on unmount
+        return () => {
+            document.body.style.overflow = ''
+        }
+    }, [sidebarOpen])
 
     return (
         <div className="min-h-screen bg-bg-primary">
