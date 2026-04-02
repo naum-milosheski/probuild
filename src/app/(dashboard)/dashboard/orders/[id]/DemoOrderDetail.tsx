@@ -12,6 +12,7 @@ import {
     Calendar
 } from 'lucide-react'
 import { getDemoOrderById, type DemoOrder } from '@/lib/demo-orders'
+import OrderActions from './OrderActions'
 
 interface DemoOrderDetailProps {
     orderId: string
@@ -93,6 +94,8 @@ export default function DemoOrderDetail({ orderId }: DemoOrderDetailProps) {
                         </p>
                     </div>
                 </div>
+
+                <OrderActions orderNumber={order.order_number} />
             </div>
 
             {/* Demo Notice */}
@@ -222,16 +225,52 @@ export default function DemoOrderDetail({ orderId }: DemoOrderDetailProps) {
                     <div className="card">
                         <h2 className="text-sm text-text-tertiary uppercase tracking-wide mb-3">Client</h2>
                         {order.client ? (
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 bg-bg-tertiary rounded-lg">
-                                    <Building2 className="w-5 h-5 text-text-secondary" />
+                            <div className="space-y-3">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 bg-bg-tertiary rounded-lg">
+                                        <Building2 className="w-5 h-5 text-text-secondary" />
+                                    </div>
+                                    <div>
+                                        <p className="font-medium text-text-primary">{order.client.company_name}</p>
+                                        {order.client.contact_name && (
+                                            <p className="text-sm text-text-secondary">{order.client.contact_name}</p>
+                                        )}
+                                    </div>
                                 </div>
-                                <div>
-                                    <p className="font-medium text-text-primary">{order.client.company_name}</p>
-                                </div>
+                                {order.client.email && (
+                                    <p className="text-sm text-text-secondary">{order.client.email}</p>
+                                )}
+                                {order.client.phone && (
+                                    <p className="text-sm text-text-secondary">{order.client.phone}</p>
+                                )}
                             </div>
                         ) : (
                             <p className="text-text-tertiary">No client assigned</p>
+                        )}
+                    </div>
+
+                    {/* Delivery Info */}
+                    <div className="card">
+                        <h2 className="text-sm text-text-tertiary uppercase tracking-wide mb-3">Delivery</h2>
+                        {order.job_site ? (
+                            <div className="flex items-start gap-3">
+                                <div className="p-2 bg-bg-tertiary rounded-lg">
+                                    <MapPin className="w-5 h-5 text-text-secondary" />
+                                </div>
+                                <div>
+                                    <p className="font-medium text-text-primary">{order.job_site.name}</p>
+                                    {(order.job_site.address || order.job_site.city) && (
+                                        <p className="text-sm text-text-secondary mt-1">
+                                            {order.job_site.address}
+                                            {order.job_site.city && `, ${order.job_site.city}`}
+                                            {order.job_site.state && `, ${order.job_site.state}`}
+                                            {order.job_site.zip && ` ${order.job_site.zip}`}
+                                        </p>
+                                    )}
+                                </div>
+                            </div>
+                        ) : (
+                            <p className="text-text-tertiary">No delivery location set</p>
                         )}
                     </div>
 

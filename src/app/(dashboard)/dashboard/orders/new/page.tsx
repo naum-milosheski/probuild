@@ -64,11 +64,11 @@ const ALL_PRODUCTS: Product[] = [
     { id: '00000000-0000-0000-0001-000000000030', organization_id: 'org-1', sku: 'TOOL-MANIF-DG', name: 'Digital Manifold Gauge Set', description: '4-port digital manifold with vacuum gauge', category_id: 'cat-4', unit: 'each', unit_price: 289.99, cost_price: 195.00, stock_qty: 6, min_stock_qty: 2, aliases: ['manifold gauges', 'HVAC gauges', 'digital manifold'], is_active: true, created_at: '', updated_at: '' },
 ]
 
-// Clients matching seed data
+// Clients matching seed data (contact details mirror seed.sql)
 const CLIENTS = [
-    { id: '00000000-0000-0000-0002-000000000001', company_name: 'BuildRight Construction' },
-    { id: '00000000-0000-0000-0002-000000000002', company_name: 'City Plumbers Inc' },
-    { id: '00000000-0000-0000-0002-000000000003', company_name: 'Comfort Zone HVAC' },
+    { id: '00000000-0000-0000-0002-000000000001', company_name: 'BuildRight Construction', contact_name: 'Mike Rodriguez', email: 'mike@buildright.com', phone: '(555) 234-5678' },
+    { id: '00000000-0000-0000-0002-000000000002', company_name: 'City Plumbers Inc', contact_name: 'Sarah Chen', email: 'sarah@cityplumbers.com', phone: '(555) 345-6789' },
+    { id: '00000000-0000-0000-0002-000000000003', company_name: 'Comfort Zone HVAC', contact_name: 'James Wilson', email: 'james@comfortzonehvac.com', phone: '(555) 456-7890' },
 ]
 
 // Staged processing messages

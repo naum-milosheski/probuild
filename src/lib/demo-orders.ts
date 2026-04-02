@@ -39,9 +39,16 @@ export interface DemoOrder {
     client?: {
         id: string
         company_name: string
+        contact_name: string | null
+        email: string | null
+        phone: string | null
     }
     job_site?: {
         name: string
+        address: string | null
+        city: string | null
+        state: string | null
+        zip: string | null
     }
 }
 
@@ -86,7 +93,7 @@ function generateId(): string {
 }
 
 interface CreateDemoOrderParams {
-    client: Pick<Client, 'id' | 'company_name'>
+    client: Pick<Client, 'id' | 'company_name' | 'contact_name' | 'email' | 'phone'>
     items: MatchedItem[]
     deliveryLocation: string | null
     notes: string | null
@@ -143,10 +150,17 @@ export function addDemoOrder(params: CreateDemoOrderParams): DemoOrder {
         client: {
             id: client.id,
             company_name: client.company_name,
+            contact_name: client.contact_name ?? null,
+            email: client.email ?? null,
+            phone: client.phone ?? null,
         },
         // Add job site from AI-extracted delivery location (clean punctuation)
         job_site: deliveryLocation ? {
             name: deliveryLocation.replace(/[?!.]+$/, '').trim(),
+            address: null,
+            city: null,
+            state: null,
+            zip: null,
         } : undefined,
     }
 
