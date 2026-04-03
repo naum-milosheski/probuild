@@ -33,11 +33,11 @@ export async function POST(request: NextRequest) {
 
     try {
         const body = await request.json()
-        const { rawText } = body
+        const { rawText, file } = body
 
-        if (!rawText || typeof rawText !== 'string') {
+        if (!rawText && !file) {
             return NextResponse.json(
-                { error: 'Missing or invalid rawText' },
+                { error: 'Missing rawText or file input' },
                 { status: 400 }
             )
         }
@@ -55,22 +55,26 @@ export async function POST(request: NextRequest) {
         let parsed;
         let method = 'mock';
 
+        console.log(`[Diagnostic] Magic Import request received. File present: ${!!file}, file type: ${file?.mimeType}, GOOGLE_GENERATIVE_AI_API_KEY present: ${!!process.env.GOOGLE_GENERATIVE_AI_API_KEY}`);
+
         if (process.env.GOOGLE_GENERATIVE_AI_API_KEY) {
             // Priority 1: Google Gemini
-            console.log('Using Google Gemini 1.5 Flash for parsing')
+            console.log('Using Google Gemini 2.0 Flash for parsing')
             try {
-                parsed = await parseOrderTextWithGemini(rawText)
+                console.log(`[Diagnostic] Attempting parseOrderTextWithGemini...`);
+                parsed = await parseOrderTextWithGemini(rawText || '', file)
+                console.log(`[Diagnostic] parseOrderTextWithGemini succeeded.`);
                 method = 'gemini'
             } catch (err) {
                 console.error('Gemini parsing failed, falling back to mock:', err)
                 console.log('Fallback: Using mock AI parsing')
-                parsed = mockParseOrder(rawText)
+                parsed = mockParseOrder(rawText || '', !!file)
                 method = 'mock (fallback from gemini)'
             }
         } else {
             // Priority 3: Mock Parser (Demo Mode)
             console.log('Demo mode: Using mock AI parsing')
-            parsed = mockParseOrder(rawText)
+            parsed = mockParseOrder(rawText || '', !!file)
         }
 
         const { matched, unmatched } = matchProductsToItems(parsed.items, products)
@@ -81,7 +85,8 @@ export async function POST(request: NextRequest) {
             delivery_location: parsed.delivery_location,
             notes: parsed.notes,
             processing_ms: Date.now() - startTime,
-            debug_method: method
+            debug_method: method,
+            raw_text: parsed.raw_text
         }
 
         return NextResponse.json(result)
@@ -96,9 +101,13 @@ export async function POST(request: NextRequest) {
 }
 
 // Mock parser for demo without AI keys
-function mockParseOrder(rawText: string) {
+function mockParseOrder(rawText: string, hasFile: boolean) {
     const items: { description: string; quantity: number | null; unit: string | null }[] = []
     const lowerText = rawText.toLowerCase()
+
+    if (hasFile && !rawText) {
+         items.push({ description: 'Parsed from uploaded file (mock)', quantity: 1, unit: 'each' })
+    }
 
     // Extract copper pipe mentions
     if (lowerText.includes('copper') || lowerText.includes('cop')) {
@@ -235,6 +244,6 @@ function mockParseOrder(rawText: string) {
         items,
         delivery_location,
         notes: null,
-        raw_text: rawText
+        raw_text: rawText || (hasFile ? '[Uploaded File]' : '')
     }
 }

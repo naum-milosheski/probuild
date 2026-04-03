@@ -195,6 +195,7 @@ export interface MagicImportResult {
     notes: string | null
     processing_ms: number
     debug_method?: string
+    raw_text: string
 }
 
 /* ============================================

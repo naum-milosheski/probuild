@@ -17,7 +17,9 @@ import {
     Users,
     RefreshCw,
     Printer,
-    Undo2
+    Undo2,
+    UploadCloud,
+    File as FileIcon
 } from 'lucide-react'
 import type { MagicImportResult, MatchedItem, UnmatchedItem, Product } from '@/types'
 import { addDemoOrder, getDemoOrders, clearDemoOrders } from '@/lib/demo-orders'
@@ -87,6 +89,7 @@ export default function MagicImportPage() {
     const router = useRouter()
     const [step, setStep] = useState<Step>('input')
     const [rawText, setRawText] = useState('')
+    const [file, setFile] = useState<File | null>(null)
     const [result, setResult] = useState<MagicImportResult | null>(null)
     const [editedItems, setEditedItems] = useState<EditableMatchedItem[]>([])
     const [resolvedItems, setResolvedItems] = useState<EditableMatchedItem[]>([])
@@ -140,16 +143,33 @@ export default function MagicImportPage() {
     ]
 
     const handleSubmit = async () => {
-        if (!rawText.trim() || !selectedClient) return
+        if ((!rawText.trim() && !file) || !selectedClient) return
 
         setStep('processing')
         setError(null)
 
         try {
+            let fileData = undefined;
+            if (file) {
+                 const base64 = await new Promise<string>((resolve, reject) => {
+                     const reader = new FileReader();
+                     reader.onload = () => {
+                         const result = reader.result as string;
+                         resolve(result.split(',')[1]);
+                     };
+                     reader.onerror = reject;
+                     reader.readAsDataURL(file);
+                 });
+                 fileData = {
+                     base64,
+                     mimeType: file.type
+                 };
+            }
+
             const response = await fetch('/api/ai/parse-order', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ rawText })
+                body: JSON.stringify({ rawText, file: fileData })
             })
 
             if (!response.ok) {
@@ -254,6 +274,7 @@ export default function MagicImportPage() {
     const resetWizard = () => {
         setStep('input')
         setRawText('')
+        setFile(null)
         setResult(null)
         setEditedItems([])
         setResolvedItems([])
@@ -380,6 +401,51 @@ export default function MagicImportPage() {
                                 autoFocus
                             />
                         </label>
+                        
+                        <div className="border border-dashed border-border-default rounded-lg p-4 bg-bg-tertiary">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 bg-bg-secondary rounded">
+                                    <UploadCloud className="w-5 h-5 text-text-tertiary" />
+                                </div>
+                                <div className="flex-1">
+                                    <p className="text-sm text-text-secondary">Or upload a document</p>
+                                    <p className="text-xs text-text-tertiary">Supports PDF, JPG, PNG, WEBP</p>
+                                </div>
+                                <div>
+                                    <input 
+                                        type="file" 
+                                        id="file-upload" 
+                                        className="hidden" 
+                                        accept=".pdf,image/jpeg,image/png,image/webp"
+                                        onChange={(e) => {
+                                            if (e.target.files && e.target.files.length > 0) {
+                                                setFile(e.target.files[0]);
+                                            }
+                                        }}
+                                    />
+                                    <button 
+                                      onClick={() => document.getElementById('file-upload')?.click()}
+                                      className="btn btn-secondary text-sm py-1.5"
+                                    >
+                                        Browse
+                                    </button>
+                                </div>
+                            </div>
+                            {file && (
+                                <div className="mt-3 flex items-center justify-between bg-bg-elevated border border-border-default p-2 rounded text-sm">
+                                    <div className="flex items-center gap-2 text-text-primary overflow-hidden">
+                                        <FileIcon className="w-4 h-4 text-orange-500 flex-shrink-0" />
+                                        <span className="truncate">{file.name}</span>
+                                    </div>
+                                    <button 
+                                        onClick={() => setFile(null)}
+                                        className="p-1 hover:text-error text-text-tertiary transition-colors"
+                                    >
+                                        <X className="w-4 h-4" />
+                                    </button>
+                                </div>
+                            )}
+                        </div>
 
                         {/* Format hints */}
                         <p className="text-xs text-text-tertiary">
@@ -410,9 +476,9 @@ export default function MagicImportPage() {
                             </div>
                             <button
                                 onClick={handleSubmit}
-                                disabled={!rawText.trim() || !selectedClient}
+                                disabled={(!rawText.trim() && !file) || !selectedClient}
                                 className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed justify-center"
-                                title={!selectedClient ? 'Select a client first' : !rawText.trim() ? 'Enter order text' : ''}
+                                title={!selectedClient ? 'Select a client first' : (!rawText.trim() && !file) ? 'Enter order text or upload a file' : ''}
                             >
                                 <Sparkles className="w-4 h-4" />
                                 {!selectedClient ? 'Select a client first' : 'Parse with AI'}
@@ -473,7 +539,7 @@ export default function MagicImportPage() {
                             </span>
                         </div>
                         <p className="text-text-primary bg-bg-tertiary p-3 rounded-md text-sm">
-                            &quot;{rawText}&quot;
+                            {(rawText || !file) ? `"${rawText}"` : `[Uploaded Document: ${result.raw_text === '[Uploaded File]' ? 'File parsed successfully' : result.raw_text}]`}
                         </p>
                         {result.delivery_location && (
                             <div className="flex items-center gap-2 mt-3 text-sm">

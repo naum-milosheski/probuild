@@ -31,20 +31,48 @@ OUTPUT FORMAT (JSON only, no markdown):
   "notes": "string" | null
 }`;
 
-// Gemini implementation using Vercel AI SDK (same as AI Real Estate)
-export async function parseOrderTextWithGemini(rawText: string): Promise<ParsedOrderResult> {
+export async function parseOrderTextWithGemini(
+    rawText: string,
+    file?: { base64: string; mimeType: string }
+): Promise<ParsedOrderResult> {
     try {
-        const { text } = await generateText({
-            model: google('gemini-2.0-flash'),
-            prompt: `${SYSTEM_PROMPT}\n\nINPUT TEXT TO PARSE:\n"${rawText}"\n\nRespond with ONLY the JSON object, no other text.`,
-        });
+        let textResult = '';
 
-        if (!text) {
+        if (file) {
+            let promptText = `${SYSTEM_PROMPT}\n\nRespond with ONLY the JSON object, no other text.`;
+            if (rawText) {
+                promptText += `\n\nINPUT TEXT TO PARSE:\n"${rawText}"`;
+            } else {
+                promptText += `\n\nExtract the details from the attached file.`;
+            }
+
+            const { text } = await generateText({
+                model: google('gemini-2.0-flash'),
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'file', data: file.base64, mediaType: file.mimeType },
+                            { type: 'text', text: promptText }
+                        ]
+                    }
+                ],
+            });
+            textResult = text;
+        } else {
+            const { text } = await generateText({
+                model: google('gemini-2.0-flash'),
+                prompt: `${SYSTEM_PROMPT}\n\nINPUT TEXT TO PARSE:\n"${rawText}"\n\nRespond with ONLY the JSON object, no other text.`,
+            });
+            textResult = text;
+        }
+
+        if (!textResult) {
             throw new Error('No response from Gemini');
         }
 
         // Extract JSON from response
-        const jsonMatch = text.match(/\{[\s\S]*\}/);
+        const jsonMatch = textResult.match(/\{[\s\S]*\}/);
         if (!jsonMatch) {
             throw new Error('Could not parse JSON from response');
         }
@@ -55,7 +83,7 @@ export async function parseOrderTextWithGemini(rawText: string): Promise<ParsedO
             items: parsed.items || [],
             delivery_location: parsed.delivery_location || null,
             notes: parsed.notes || null,
-            raw_text: rawText,
+            raw_text: rawText || (file ? '[Uploaded File]' : ''),
         };
 
     } catch (error) {
