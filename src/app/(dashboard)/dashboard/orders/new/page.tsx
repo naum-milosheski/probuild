@@ -233,8 +233,7 @@ export default function MagicImportPage() {
             setToastExiting(true)
             setTimeout(() => setShowUndoToast(false), 300)
         }, 5000)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [selectedClient, result])
+    }, [selectedClient, result, editedItems, resolvedItems])
 
     const handleUndo = () => {
         if (undoTimerRef.current) clearTimeout(undoTimerRef.current)
