@@ -1,7 +1,8 @@
 import Link from 'next/link'
-import { ArrowLeft, Filter, Search, Calendar, Download, FileText, DollarSign } from 'lucide-react'
+import { ArrowLeft, Calendar, FileText, DollarSign } from 'lucide-react'
 import { getCurrentPortalClient, getPortalOrders } from '@/lib/data/portal'
 import { notFound } from 'next/navigation'
+import InvoiceDownloadButton from '@/components/portal/InvoiceDownloadButton'
 
 export default async function PortalInvoicesPage() {
     const client = await getCurrentPortalClient()
@@ -65,9 +66,7 @@ export default async function PortalInvoicesPage() {
                                     <p className="text-xs text-text-tertiary uppercase font-medium">Amount</p>
                                     <p className="text-lg font-bold text-text-primary font-mono">${order.total?.toFixed(2)}</p>
                                 </div>
-                                <button className="p-2 bg-bg-elevated border border-border-default hover:border-orange-500/50 hover:text-orange-500 rounded-md transition-all group" aria-label="Download PDF">
-                                    <Download className="w-5 h-5 text-text-secondary group-hover:text-orange-500" />
-                                </button>
+                                <InvoiceDownloadButton orderNumber={order.order_number} />
                             </div>
                         </div>
                     ))

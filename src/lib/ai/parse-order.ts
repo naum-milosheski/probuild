@@ -15,6 +15,8 @@ RULES:
 6. Look for delivery location mentions (job site names, addresses)
 7. Extract any special notes or instructions
 8. Be generous in interpretation - contractors use informal language
+9. Only extract items that are explicitly written or printed - do NOT guess or infer items
+10. If the input does not contain a clear order, material list, or purchase request, return an empty items array
 
 EXAMPLES:
 - "30ft of half-inch copper pipe" → description: "half-inch copper pipe", quantity: 30, unit: "ft"
@@ -39,11 +41,35 @@ export async function parseOrderTextWithGemini(
         let textResult = '';
 
         if (file) {
+            // Step 1: classify before extracting to prevent hallucination
+            const { text: classification } = await generateText({
+                model: google('gemini-2.0-flash'),
+                messages: [
+                    {
+                        role: 'user',
+                        content: [
+                            { type: 'file', data: file.base64, mediaType: file.mimeType },
+                            { type: 'text', text: 'Does this image or document contain a written or printed order, purchase list, material request, or invoice? Answer only YES or NO.' }
+                        ]
+                    }
+                ],
+            });
+
+            if (!classification.trim().toUpperCase().startsWith('YES')) {
+                return {
+                    items: [],
+                    delivery_location: null,
+                    notes: null,
+                    raw_text: rawText || '[Uploaded File]',
+                };
+            }
+
+            // Step 2: extract only if classification confirmed order content
             let promptText = `${SYSTEM_PROMPT}\n\nRespond with ONLY the JSON object, no other text.`;
             if (rawText) {
                 promptText += `\n\nINPUT TEXT TO PARSE:\n"${rawText}"`;
             } else {
-                promptText += `\n\nExtract the details from the attached file.`;
+                promptText += `\n\nExtract the order details from the attached file.`;
             }
 
             const { text } = await generateText({
