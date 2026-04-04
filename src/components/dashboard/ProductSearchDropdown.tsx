@@ -47,7 +47,7 @@ export default function ProductSearchDropdown({
     }, [onClose])
 
     const filtered = useMemo(() => {
-        if (!query.trim()) return products.slice(0, 10)
+        if (!query.trim()) return products
         const q = query.toLowerCase()
         return products
             .filter(p =>
@@ -55,7 +55,6 @@ export default function ProductSearchDropdown({
                 p.sku.toLowerCase().includes(q) ||
                 p.aliases.some(a => a.toLowerCase().includes(q))
             )
-            .slice(0, 10)
     }, [query, products])
 
     return (

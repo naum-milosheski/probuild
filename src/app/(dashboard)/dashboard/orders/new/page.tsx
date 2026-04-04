@@ -75,7 +75,7 @@ const CLIENTS = [
 
 // Staged processing messages
 const PROCESSING_MESSAGES = [
-    { text: 'Extracting items from text...', icon: FileText },
+    { text: 'Extracting items from document...', icon: FileText },
     { text: 'Matching to inventory catalog...', icon: Package },
     { text: 'Calculating confidence scores...', icon: Sparkles },
 ]
@@ -301,7 +301,7 @@ export default function MagicImportPage() {
                     </div>
                     <div>
                         <h1 className="text-2xl font-semibold text-text-primary">Magic Import</h1>
-                        <p className="text-text-secondary">Paste contractor text → AI creates structured order</p>
+                        <p className="text-text-secondary">Paste text, upload a PDF, or photograph a handwritten note → AI creates a structured order</p>
                     </div>
                 </div>
             </div>
@@ -391,7 +391,7 @@ export default function MagicImportPage() {
                     <div className="card space-y-4">
                         <label className="block">
                             <span className="text-text-secondary text-sm mb-2 block">
-                                Paste the contractor&apos;s message
+                                Paste the contractor&apos;s message, or upload a PDF/Image below
                             </span>
                             <textarea
                                 value={rawText}
@@ -449,7 +449,7 @@ export default function MagicImportPage() {
 
                         {/* Format hints */}
                         <p className="text-xs text-text-tertiary">
-                            Works with plain sentences, bullet lists, numbered lists, or any informal contractor language.
+                            Works with plain sentences, bullet lists, handwritten notes, PDFs, or any informal contractor language.
                         </p>
 
                         {error && (

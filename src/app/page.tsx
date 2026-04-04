@@ -36,7 +36,7 @@ export default function Home() {
             <span className="font-semibold">Magic Import</span>
           </div>
           <p className="text-text-secondary text-sm">
-            Paste messy contractor text → AI parses it → Structured order in seconds
+            Paste text or upload documents → AI parses it → Structured order in seconds
           </p>
           <div className="bg-bg-tertiary rounded-md p-3 text-left font-mono text-xs text-text-tertiary">
             &quot;Send 30ft of half-inch copper pipe and 2 boxes of those red wire nuts to Job Site A&quot;

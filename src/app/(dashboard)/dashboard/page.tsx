@@ -180,7 +180,7 @@ export default async function DashboardPage() {
                             </div>
                             <div>
                                 <p className="text-sm font-medium text-text-primary">Magic Import</p>
-                                <p className="text-xs text-text-tertiary">Paste text → Create order</p>
+                                <p className="text-xs text-text-tertiary">Paste or upload → Create order</p>
                             </div>
                             <ArrowRight className="w-4 h-4 ml-auto opacity-0 group-hover:opacity-100 transition-opacity" style={{ color: '#D4AF37' }} />
                         </Link>
