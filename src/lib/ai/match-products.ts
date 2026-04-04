@@ -9,7 +9,7 @@ import type {
 // Confidence thresholds
 const HIGH_CONFIDENCE = 0.9
 const MEDIUM_CONFIDENCE = 0.7
-const LOW_CONFIDENCE = 0.5
+const LOW_CONFIDENCE = 0.75
 
 /**
  * Calculate string similarity using Levenshtein distance
