@@ -2,6 +2,7 @@
 
 import { useState, useRef, useEffect, useCallback } from 'react'
 import { useRouter } from 'next/navigation'
+import { createClient as createSupabaseClient } from '@supabase/supabase-js'
 import {
     Sparkles,
     ArrowRight,
@@ -66,12 +67,7 @@ const ALL_PRODUCTS: Product[] = [
     { id: '00000000-0000-0000-0001-000000000030', organization_id: 'org-1', sku: 'TOOL-MANIF-DG', name: 'Digital Manifold Gauge Set', description: '4-port digital manifold with vacuum gauge', category_id: 'cat-4', unit: 'each', unit_price: 289.99, cost_price: 195.00, stock_qty: 6, min_stock_qty: 2, aliases: ['manifold gauges', 'HVAC gauges', 'digital manifold'], is_active: true, created_at: '', updated_at: '' },
 ]
 
-// Clients matching seed data (contact details mirror seed.sql)
-const CLIENTS = [
-    { id: '00000000-0000-0000-0002-000000000001', company_name: 'BuildRight Construction', contact_name: 'Mike Rodriguez', email: 'mike@buildright.com', phone: '(555) 234-5678' },
-    { id: '00000000-0000-0000-0002-000000000002', company_name: 'City Plumbers Inc', contact_name: 'Sarah Chen', email: 'sarah@cityplumbers.com', phone: '(555) 345-6789' },
-    { id: '00000000-0000-0000-0002-000000000003', company_name: 'Comfort Zone HVAC', contact_name: 'James Wilson', email: 'james@comfortzonehvac.com', phone: '(555) 456-7890' },
-]
+type ClientOption = { id: string; company_name: string; contact_name: string | null; email: string | null; phone: string | null }
 
 // Staged processing messages
 const PROCESSING_MESSAGES = [
@@ -94,7 +90,8 @@ export default function MagicImportPage() {
     const [editedItems, setEditedItems] = useState<EditableMatchedItem[]>([])
     const [resolvedItems, setResolvedItems] = useState<EditableMatchedItem[]>([])
     const [error, setError] = useState<string | null>(null)
-    const [selectedClient, setSelectedClient] = useState<typeof CLIENTS[0] | null>(null)
+    const [clients, setClients] = useState<ClientOption[]>([])
+    const [selectedClient, setSelectedClient] = useState<ClientOption | null>(null)
     const [createdOrderId, setCreatedOrderId] = useState<string | null>(null)
     const [createdOrderNumber, setCreatedOrderNumber] = useState<string | null>(null)
     const [showClientDropdown, setShowClientDropdown] = useState(false)
@@ -115,6 +112,19 @@ export default function MagicImportPage() {
         }
         document.addEventListener('mousedown', handleClickOutside)
         return () => document.removeEventListener('mousedown', handleClickOutside)
+    }, [])
+
+    // Fetch clients from Supabase on mount
+    useEffect(() => {
+        const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
+        const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+        if (!supabaseUrl || !supabaseKey) return
+        const supabase = createSupabaseClient(supabaseUrl, supabaseKey)
+        supabase
+            .from('clients')
+            .select('id, company_name, contact_name, email, phone')
+            .order('company_name')
+            .then(({ data }) => { if (data) setClients(data) })
     }, [])
 
     // Cycle processing messages
@@ -362,7 +372,7 @@ export default function MagicImportPage() {
                                         <span className="text-xs text-text-tertiary uppercase tracking-wide">Available Clients</span>
                                     </div>
                                     <div className="p-1 max-h-48 overflow-y-auto">
-                                        {CLIENTS.map(client => (
+                                        {clients.map(client => (
                                             <button
                                                 key={client.id}
                                                 onClick={() => {
